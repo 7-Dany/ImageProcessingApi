@@ -39,35 +39,58 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var supertest_1 = __importDefault(require("supertest"));
-var index_1 = __importDefault(require("../index"));
-var images_1 = require("../routes/images");
-// create a request object
-var request = (0, supertest_1.default)(index_1.default);
-describe('Test endpoint response', function () { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        it('test images endpoint its status should be 200', function () { return __awaiter(void 0, void 0, void 0, function () {
-            var response;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, request
-                            .get('/images')
-                            .query({ filename: 'fjord', width: 200, height: 200 })];
-                    case 1:
-                        response = _a.sent();
-                        expect(response.status).toBe(200);
-                        return [2 /*return*/];
-                }
-            });
-        }); });
-        return [2 /*return*/];
+exports.checkImage = exports.resizeImage = exports.checkThumbnailsFolder = void 0;
+var fs_1 = __importDefault(require("fs"));
+var sharp_1 = __importDefault(require("sharp"));
+function checkThumbnailsFolder() {
+    return __awaiter(this, void 0, void 0, function () {
+        var checkFolder;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, fs_1.default.promises
+                        .access('assets/thumbnails', fs_1.default.constants.F_OK)
+                        .then(function () { return true; })
+                        .catch(function () { return false; })];
+                case 1:
+                    checkFolder = _a.sent();
+                    if (!!checkFolder) return [3 /*break*/, 3];
+                    return [4 /*yield*/, fs_1.default.promises.mkdir('assets/thumbnails')];
+                case 2:
+                    _a.sent();
+                    _a.label = 3;
+                case 3: return [2 /*return*/];
+            }
+        });
     });
-}); });
-describe('Testing imageChecking function to check if image exist in thumbnails', function () {
-    it('should return false for hello_200_200.jpg', function () {
-        expect((0, images_1.checkImage)('hello', 200, 200)).toBeFalse();
+}
+exports.checkThumbnailsFolder = checkThumbnailsFolder;
+function resizeImage(filename, width, height) {
+    return __awaiter(this, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: 
+                // To resize image with new width and height
+                return [4 /*yield*/, (0, sharp_1.default)("assets/full/".concat(filename, ".jpg"))
+                        .resize(width, height)
+                        .toFile("assets/thumbnails/".concat(filename, "_").concat(width, "_").concat(height, ".jpg"))];
+                case 1:
+                    // To resize image with new width and height
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
     });
-    it('should return true for fjord_200_200.jpg', function () {
-        expect((0, images_1.checkImage)('fjord', 200, 200)).toBeTrue();
+}
+exports.resizeImage = resizeImage;
+function checkImage(filename, width, height) {
+    // check if image got resized before or not
+    var checking = false;
+    var files = fs_1.default.readdirSync('assets/thumbnails');
+    files.find(function (file) {
+        if (file === "".concat(filename, "_").concat(width, "_").concat(height, ".jpg")) {
+            checking = true;
+        }
     });
-});
+    return checking;
+}
+exports.checkImage = checkImage;

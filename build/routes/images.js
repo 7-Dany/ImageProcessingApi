@@ -39,48 +39,45 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkImage = void 0;
 var express_1 = __importDefault(require("express"));
 var fs_1 = __importDefault(require("fs"));
-var sharp_1 = __importDefault(require("sharp"));
+var utilities_1 = require("./utilities");
 var images = express_1.default.Router();
-function checkImage(filename, width, height) {
-    var checking = false;
-    var files = fs_1.default.readdirSync('assets/thumbnails');
-    files.find(function (file) {
-        if (file === "".concat(filename, "_").concat(width, "_").concat(height, ".jpg")) {
-            checking = true;
-        }
-    });
-    return checking;
-}
-exports.checkImage = checkImage;
 images.get('/images', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var fullFiles, filename, width, height, checkFolder, fileExist;
+    var fullFiles, filename, width, height, fileExist;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 fullFiles = fs_1.default.readdirSync('assets/full');
                 filename = req.query.filename;
+                // Checking if Full folder has this filename or not
                 if (!fullFiles.includes("".concat(filename, ".jpg"))) {
-                    res.send('This image is not exist');
+                    // If the file is not in Full folder it will throw error with status of 500
+                    res.status(500).send('This image is not exist');
                     return [2 /*return*/];
                 }
                 width = parseInt(req.query.width);
                 height = parseInt(req.query.height);
-                checkFolder = fs_1.default.existsSync('assets/thumbnails');
-                if (!checkFolder) {
-                    fs_1.default.mkdirSync('assets/thumbnails');
+                if (isNaN(width) || isNaN(height)) {
+                    // If width and height are not number it will send 500 status respond with error message
+                    res.status(500).send('Please Provide Valid Width and Height');
+                    return [2 /*return*/];
                 }
-                fileExist = checkImage(filename, width, height);
-                if (!!fileExist) return [3 /*break*/, 2];
-                return [4 /*yield*/, (0, sharp_1.default)("assets/full/".concat(filename, ".jpg"))
-                        .resize(width, height)
-                        .toFile("assets/thumbnails/".concat(filename, "_").concat(width, "_").concat(height, ".jpg"))];
+                // Checking if thumbnails folder exist or not if not it will create one
+                return [4 /*yield*/, (0, utilities_1.checkThumbnailsFolder)()
+                    // Checking if the image has been resized with same width and height or not if not it will resize it
+                ];
             case 1:
+                // Checking if thumbnails folder exist or not if not it will create one
                 _a.sent();
-                _a.label = 2;
+                fileExist = (0, utilities_1.checkImage)(filename, width, height);
+                if (!!fileExist) return [3 /*break*/, 3];
+                return [4 /*yield*/, (0, utilities_1.resizeImage)(filename, width, height)];
             case 2:
+                _a.sent();
+                _a.label = 3;
+            case 3:
+                // Reading and the image and view it on the browser after resizing it
                 fs_1.default.readFile("assets/thumbnails/".concat(filename, "_").concat(width, "_").concat(height, ".jpg"), function (err, data) {
                     if (err)
                         throw err;
